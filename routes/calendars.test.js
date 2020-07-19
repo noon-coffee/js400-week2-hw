@@ -3,6 +3,7 @@ const request = require("supertest");
 
 const server = require("../server");
 const testUtils = require('../test-utils');
+const CalendarDAO = require('../daos/calendars');
 
 describe("/calendars", () => {
   beforeAll(testUtils.connectDB);
@@ -88,6 +89,17 @@ describe("/calendars", () => {
         _id: calendar1._id 
       });
     });
+
+    /*
+     * Though the homework instructions mention that calendars.test.js does not need to be
+     * modified, I wanted to be consistent with the Widgets in-class example by returning
+     * a 400 when there's no data in the request body and so created this test to provide
+     * test coverage for it (i.e. bring test coverage to 100%). 
+     */
+    it("should return a 400 with no data in the request body", async () => {
+      const res = await request(server).put("/calendars/" + calendar1._id)
+      expect(res.statusCode).toEqual(400);
+    });
   });
 
   describe('DELETE /:id after POST /', () => {
@@ -102,6 +114,22 @@ describe("/calendars", () => {
       expect(res.statusCode).toEqual(200);    
       const storedCalendarResponse = (await request(server).get("/calendars/" + calendar1._id));
       expect(storedCalendarResponse.status).toEqual(404);
+    });
+
+    /*
+     * Though the homework instructions mention that calendars.test.js does not need to be
+     * modified, I wanted to be consistent with the Widgets in-class example by returning
+     * a 500 when an error occurs during the delete operation and so created this test to provide
+     * test coverage for it (i.e. bring test coverage to 100%). 
+     * Please let me know if you have feedback on this "jest.spyOn" approach that I researched
+     * on StackOverflow.
+     */
+    it('should return a 500 if an error occurs during deletion', async() => {
+      const mockDeleteById = jest.spyOn(CalendarDAO, 'deleteById');
+      mockDeleteById.mockImplementation(() => {throw new Error;});
+
+      const res = await request(server).delete("/calendars/" + calendar1._id);
+      expect(res.statusCode).toEqual(500);    
     });
   });
 });
